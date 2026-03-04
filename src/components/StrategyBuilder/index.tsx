@@ -37,11 +37,16 @@ export const StrategyBuilder: React.FC = () => {
     setNlStatus('parsing')
     setNlMessage('Parsing…')
     const result = await parseNLRule(text)
-    if (result.rule) {
-      addRule(result.rule)
+    if (result.rules.length > 0) {
+      result.rules.forEach(r => addRule(r))
       setNlText('')
       setNlStatus(result.method === 'ai' ? 'ai' : 'ok')
-      setNlMessage(result.method === 'ai' ? 'Added via AI ✦' : 'Rule added!')
+      const n = result.rules.length
+      setNlMessage(
+        result.method === 'ai'
+          ? `${n} rule${n > 1 ? 's' : ''} added via AI ✦`
+          : `${n} rule${n > 1 ? 's' : ''} added!`
+      )
       setTimeout(() => { setNlStatus('idle'); setNlMessage('') }, 2000)
     } else {
       setNlStatus('error')
@@ -191,11 +196,11 @@ export const StrategyBuilder: React.FC = () => {
           )}
           <div className="flex flex-wrap gap-1 mt-1.5">
             {[
-              'Stop loss at $500',
+              'After 3 Banker wins increase bet 3 units then back to base',
               'Martingale after 3 losses',
               'Bet Banker after 4 Banker wins',
+              'Stop loss at $500',
               'Skip 2 hands after tie',
-              'Take profit at $1000',
             ].map(ex => (
               <button key={ex} onClick={() => { setNlText(ex); nlRef.current?.focus() }}
                 className="text-[9px] px-1.5 py-0.5 rounded-md transition-colors"
