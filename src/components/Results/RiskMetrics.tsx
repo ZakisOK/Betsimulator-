@@ -26,7 +26,7 @@ function normalize(
   return invert ? 100 - normalized : normalized
 }
 
-export const RiskRadar: React.FC<Props> = ({ results, previous }) => {
+export const RiskMetrics: React.FC<Props> = ({ results, previous }) => {
   const m = results.metrics
   const p = previous?.metrics
 
