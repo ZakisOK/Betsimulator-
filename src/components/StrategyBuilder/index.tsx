@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react'
-import { Plus, Play, Save, Upload, Download, FolderOpen, X, Loader2, ChevronDown, ChevronRight, Sliders, Sparkles, Check, AlertCircle } from 'lucide-react'
+import { Plus, Play, Save, Upload, Download, FolderOpen, X, Loader2, ChevronDown, ChevronRight, Sliders, Sparkles, Check, AlertCircle, Zap } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { RuleCard } from './RuleCard'
 import { SimConfig } from './SimulationConfig'
+import { DiscoveryPanel } from '../Discovery'
 import type { Rule } from '../../types'
 import { parseNLRule } from '../../utils/nlRuleParser'
 
@@ -21,9 +22,10 @@ export const StrategyBuilder: React.FC = () => {
     deleteStrategy, importStrategy,
   } = useStore()
 
-  const [showSimConfig, setShowSimConfig] = useState(false)
-  const [showLibrary, setShowLibrary]     = useState(false)
-  const [editingName, setEditingName]     = useState(false)
+  const [showSimConfig,  setShowSimConfig]  = useState(false)
+  const [showLibrary,    setShowLibrary]    = useState(false)
+  const [editingName,    setEditingName]    = useState(false)
+  const [showDiscovery,  setShowDiscovery]  = useState(false)
 
   // Natural language input state
   const [nlText, setNlText]         = useState('')
@@ -75,6 +77,7 @@ export const StrategyBuilder: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {showDiscovery && <DiscoveryPanel onClose={() => setShowDiscovery(false)}/>}
 
       {/* Header */}
       <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -95,13 +98,15 @@ export const StrategyBuilder: React.FC = () => {
           )}
           <div className="flex gap-0.5 shrink-0">
             {[
+              { icon: <Zap size={12}/>,       title: 'Auto-Discover',  fn: () => setShowDiscovery(true), highlight: true },
               { icon: <Upload size={12}/>,    title: 'Import JSON',    fn: handleImport },
               { icon: <Download size={12}/>,  title: 'Export JSON',    fn: handleExport },
               { icon: <Save size={12}/>,      title: 'Save to Library',fn: saveStrategy },
               { icon: <FolderOpen size={12}/>,title: 'Library',        fn: () => setShowLibrary(!showLibrary) },
-            ].map(({ icon, title, fn }) => (
+            ].map(({ icon, title, fn, highlight }) => (
               <button key={title} title={title} onClick={fn}
-                className="p-1.5 rounded-lg transition-all hover:bg-white/10 text-white/35 hover:text-white/70">
+                className="p-1.5 rounded-lg transition-all hover:bg-white/10 text-white/35 hover:text-white/70"
+                style={highlight ? { color: 'rgba(251,191,36,0.7)' } : undefined}>
                 {icon}
               </button>
             ))}
