@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
-import { Plus, Play, Save, Upload, Download, FolderOpen, X, Loader2, ChevronDown, ChevronRight, Sliders } from 'lucide-react'
+import React, { useState, useRef } from 'react'
+import { Plus, Play, Save, Upload, Download, FolderOpen, X, Loader2, ChevronDown, ChevronRight, Sliders, Sparkles, Check, AlertCircle } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { RuleCard } from './RuleCard'
 import { SimConfig } from './SimulationConfig'
 import type { Rule } from '../../types'
+import { parseNLRule } from '../../utils/nlRuleParser'
 
 const DEFAULT_NEW_RULE: Omit<Rule, 'id' | 'priority'> = {
   enabled: true, label: 'New Rule',
@@ -23,6 +24,32 @@ export const StrategyBuilder: React.FC = () => {
   const [showSimConfig, setShowSimConfig] = useState(false)
   const [showLibrary, setShowLibrary]     = useState(false)
   const [editingName, setEditingName]     = useState(false)
+
+  // Natural language input state
+  const [nlText, setNlText]         = useState('')
+  const [nlStatus, setNlStatus]     = useState<'idle' | 'parsing' | 'ok' | 'ai' | 'error'>('idle')
+  const [nlMessage, setNlMessage]   = useState('')
+  const nlRef = useRef<HTMLInputElement>(null)
+
+  const handleNLSubmit = async () => {
+    const text = nlText.trim()
+    if (!text) return
+    setNlStatus('parsing')
+    setNlMessage('Parsing…')
+    const result = await parseNLRule(text)
+    if (result.rule) {
+      addRule(result.rule)
+      setNlText('')
+      setNlStatus(result.method === 'ai' ? 'ai' : 'ok')
+      setNlMessage(result.method === 'ai' ? 'Added via AI ✦' : 'Rule added!')
+      setTimeout(() => { setNlStatus('idle'); setNlMessage('') }, 2000)
+    } else {
+      setNlStatus('error')
+      setNlMessage('Could not parse — try: "Bet Banker after 3 Banker wins"')
+      setTimeout(() => { setNlStatus('idle'); setNlMessage('') }, 4000)
+    }
+    nlRef.current?.focus()
+  }
 
   const handleExport = () => {
     const blob = new Blob([JSON.stringify(currentStrategy, null, 2)], { type: 'application/json' })
@@ -120,6 +147,64 @@ export const StrategyBuilder: React.FC = () => {
             className="flex items-center gap-1 text-[10px] font-medium text-blue-400/90 hover:text-blue-300 transition-colors">
             <Plus size={11}/>Add Rule
           </button>
+        </div>
+
+        {/* Natural language input */}
+        <div className="mb-3">
+          <div className="relative">
+            <Sparkles size={12}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: nlStatus === 'error' ? 'rgba(248,113,113,0.7)' : nlStatus === 'ok' ? 'rgba(74,222,128,0.8)' : nlStatus === 'ai' ? 'rgba(167,139,250,0.9)' : 'rgba(99,102,241,0.6)' }}
+            />
+            <input
+              ref={nlRef}
+              value={nlText}
+              onChange={e => setNlText(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleNLSubmit()}
+              placeholder='Describe a rule… e.g. "bet Banker after 3 wins"'
+              disabled={nlStatus === 'parsing'}
+              className="input-glass w-full pl-7 pr-16 py-2 text-xs placeholder:text-white/20"
+              style={{
+                borderColor: nlStatus === 'error' ? 'rgba(248,113,113,0.3)'
+                           : nlStatus === 'ok' || nlStatus === 'ai' ? 'rgba(74,222,128,0.3)'
+                           : undefined,
+              }}
+            />
+            <button
+              onClick={handleNLSubmit}
+              disabled={!nlText.trim() || nlStatus === 'parsing'}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded text-[10px] font-medium transition-all"
+              style={{ background: 'rgba(99,102,241,0.25)', color: 'rgba(165,180,252,0.9)' }}
+            >
+              {nlStatus === 'parsing' ? <Loader2 size={10} className="animate-spin"/> : 'Add'}
+            </button>
+          </div>
+          {nlMessage && (
+            <div className="flex items-center gap-1.5 mt-1 px-1">
+              {nlStatus === 'error'
+                ? <AlertCircle size={10} className="text-red-400 shrink-0"/>
+                : <Check size={10} className="text-emerald-400 shrink-0"/>}
+              <span className="text-[10px]" style={{ color: nlStatus === 'error' ? 'rgba(248,113,113,0.8)' : nlStatus === 'ai' ? 'rgba(167,139,250,0.9)' : 'rgba(74,222,128,0.8)' }}>
+                {nlMessage}
+              </span>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {[
+              'Stop loss at $500',
+              'Martingale after 3 losses',
+              'Bet Banker after 4 Banker wins',
+              'Skip 2 hands after tie',
+              'Take profit at $1000',
+            ].map(ex => (
+              <button key={ex} onClick={() => { setNlText(ex); nlRef.current?.focus() }}
+                className="text-[9px] px-1.5 py-0.5 rounded-md transition-colors"
+                style={{ background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.07)' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}
+              >{ex}</button>
+            ))}
+          </div>
         </div>
 
         {currentStrategy.rules.length === 0 ? (
