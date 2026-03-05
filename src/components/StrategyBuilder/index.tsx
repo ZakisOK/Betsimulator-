@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react'
-import { Plus, Play, Save, Upload, Download, FolderOpen, X, Loader2, ChevronDown, ChevronRight, Sliders, Sparkles, Check, AlertCircle, Zap } from 'lucide-react'
+import { Plus, Play, Save, Upload, Download, FolderOpen, X, Loader2, ChevronDown, ChevronRight, Sliders, Sparkles, Check, AlertCircle, Zap, Bot } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { RuleCard } from './RuleCard'
 import { SimConfig } from './SimulationConfig'
 import { DiscoveryPanel } from '../Discovery'
+import { AutoOptimizerPanel } from '../AutoOptimizer'
 import type { Rule } from '../../types'
 import { parseNLRule } from '../../utils/nlRuleParser'
 
@@ -22,10 +23,11 @@ export const StrategyBuilder: React.FC = () => {
     deleteStrategy, importStrategy,
   } = useStore()
 
-  const [showSimConfig,  setShowSimConfig]  = useState(false)
-  const [showLibrary,    setShowLibrary]    = useState(false)
-  const [editingName,    setEditingName]    = useState(false)
-  const [showDiscovery,  setShowDiscovery]  = useState(false)
+  const [showSimConfig,    setShowSimConfig]    = useState(false)
+  const [showLibrary,      setShowLibrary]      = useState(false)
+  const [editingName,      setEditingName]      = useState(false)
+  const [showDiscovery,    setShowDiscovery]    = useState(false)
+  const [showAutoOptimizer,setShowAutoOptimizer] = useState(false)
 
   // Natural language input state
   const [nlText, setNlText]         = useState('')
@@ -77,7 +79,8 @@ export const StrategyBuilder: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {showDiscovery && <DiscoveryPanel onClose={() => setShowDiscovery(false)}/>}
+      {showDiscovery     && <DiscoveryPanel onClose={() => setShowDiscovery(false)}/>}
+      {showAutoOptimizer && <AutoOptimizerPanel onClose={() => setShowAutoOptimizer(false)}/>}
 
       {/* Header */}
       <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -98,15 +101,16 @@ export const StrategyBuilder: React.FC = () => {
           )}
           <div className="flex gap-0.5 shrink-0">
             {[
-              { icon: <Zap size={12}/>,       title: 'Auto-Discover',  fn: () => setShowDiscovery(true), highlight: true },
+              { icon: <Bot size={12}/>,       title: 'Auto-Optimizer', fn: () => setShowAutoOptimizer(true), highlight: true, highlightColor: 'rgba(167,139,250,0.8)' },
+              { icon: <Zap size={12}/>,       title: 'Auto-Discover',  fn: () => setShowDiscovery(true),    highlight: true, highlightColor: 'rgba(251,191,36,0.7)' },
               { icon: <Upload size={12}/>,    title: 'Import JSON',    fn: handleImport },
               { icon: <Download size={12}/>,  title: 'Export JSON',    fn: handleExport },
               { icon: <Save size={12}/>,      title: 'Save to Library',fn: saveStrategy },
               { icon: <FolderOpen size={12}/>,title: 'Library',        fn: () => setShowLibrary(!showLibrary) },
-            ].map(({ icon, title, fn, highlight }) => (
+            ].map(({ icon, title, fn, highlight, highlightColor }: any) => (
               <button key={title} title={title} onClick={fn}
                 className="p-1.5 rounded-lg transition-all hover:bg-white/10 text-white/35 hover:text-white/70"
-                style={highlight ? { color: 'rgba(251,191,36,0.7)' } : undefined}>
+                style={highlight ? { color: highlightColor ?? 'rgba(251,191,36,0.7)' } : undefined}>
                 {icon}
               </button>
             ))}

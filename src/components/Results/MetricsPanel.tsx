@@ -34,7 +34,7 @@ export const MetricsPanel: React.FC<Props> = ({ results, previous }) => {
   return (
     <div className="space-y-3">
       {SEC('Core Financial')}
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
         <Tile label="Net P&L"      value={`${m.net_pnl>=0?'+':''}$${Math.abs(m.net_pnl).toFixed(0)}`}          color={G(m.net_pnl)}     sub={`${results.config.num_shoes.toLocaleString()} shoes`} delta={d(m.net_pnl, p?.net_pnl)}/>
         <Tile label="ROI"          value={`${(m.roi*100).toFixed(3)}%`}                                          color={G(m.roi)}          sub="of wagered"              delta={p ? (m.roi-p.roi)*100 : undefined}/>
         <Tile label="Win Rate"     value={`${(m.win_rate*100).toFixed(2)}%`}                                     color={G(m.win_rate,0.45)} sub={`${m.total_wins.toLocaleString()} wins`}/>
@@ -44,7 +44,7 @@ export const MetricsPanel: React.FC<Props> = ({ results, previous }) => {
       </div>
 
       {SEC('Risk')}
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
         <Tile label="Max Drawdown" value={`$${m.max_drawdown.toFixed(0)}`}
           color={m.max_drawdown > results.config.starting_bankroll*0.3 ? 'text-red-400' : 'text-amber-400'}
           sub={`${((m.max_drawdown/results.config.starting_bankroll)*100).toFixed(1)}%`}/>
@@ -62,7 +62,7 @@ export const MetricsPanel: React.FC<Props> = ({ results, previous }) => {
       </div>
 
       {SEC('Streaks & Distribution')}
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
         <Tile label="Max Win Streak"  value={`${m.winning_streak_max}`}                  color="text-emerald-400" sub="consecutive"/>
         <Tile label="Max Loss Streak" value={`${m.losing_streak_max}`}                   color="text-red-400"     sub="consecutive"/>
         <Tile label="Skipped Hands"   value={m.skipped_hands.toLocaleString()}            color="text-white/50"    sub="no bet"/>

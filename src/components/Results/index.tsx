@@ -78,7 +78,7 @@ export const ResultsPanel: React.FC = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-0.5">
+        <div className="flex gap-0.5 overflow-x-auto scrollbar-hide">
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all"

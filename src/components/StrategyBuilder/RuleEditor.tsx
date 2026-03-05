@@ -32,8 +32,8 @@ export const RuleEditor: React.FC<Props> = ({ rule, onSave, onClose }) => {
   const uM = (u: Partial<Modifiers>) => setModifiers(m => ({ ...m, ...u }))
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter:'blur(8px)' }}>
-      <div className="glass-elevated w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter:'blur(8px)' }}>
+      <div className="glass-elevated w-full max-w-lg max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
           <h3 className="font-bold text-white/90">Edit Rule</h3>
           <button onClick={onClose} className="text-white/40 hover:text-white/90 text-xl leading-none transition-colors">×</button>
