@@ -8,6 +8,7 @@ import { ResultsPanel } from './components/Results'
 import { MathAgent } from './components/MathAgent'
 import { ToastContainer } from './components/Toast'
 import { LandingPage } from './components/LandingPage'
+import { ComingSoon } from './components/ComingSoon'
 import { UpgradeModal } from './components/UpgradeModal'
 import { AuthCallback } from './pages/AuthCallback'
 import { Terms } from './pages/Terms'
@@ -317,7 +318,15 @@ function AuthGate() {
 
   useEffect(() => {
     document.documentElement.classList.add('dark')
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('unlock') === 'bb2026') {
+      localStorage.setItem('bb_unlocked', 'true')
+      window.history.replaceState({}, '', window.location.pathname)
+    }
   }, [])
+
+  const isUnlocked = localStorage.getItem('bb_unlocked') === 'true'
+  if (!isUnlocked) return <ComingSoon />
 
   if (authLoading) {
     return (
