@@ -39,7 +39,7 @@ export const LandingPage: React.FC = () => {
   const openSignIn = () => { setAuthMode('sign_in'); setShowAuth(true) }
 
   return (
-    <div className="min-h-screen bg-mesh text-white overflow-y-auto">
+    <div className="min-h-screen bg-mesh text-white">
 
       {/* Header */}
       <header
