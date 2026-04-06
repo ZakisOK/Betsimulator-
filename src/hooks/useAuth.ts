@@ -10,38 +10,50 @@ export function useAuth() {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session)
       if (session) {
-        await loadProfile(session.user.id)
-        await updateLastSignIn(session.user.id)
-        migrateLocalStorage()
+        try {
+          await loadProfile(session.user.id)
+          await updateLastSignIn(session.user.id)
+          migrateLocalStorage()
+        } catch {
+          // Fallback: set user from session so we never get stuck on loading
+          setUser({
+            id: session.user.id,
+            email: session.user.email ?? '',
+            display_name: session.user.user_metadata?.full_name ?? null,
+            avatar_url: session.user.user_metadata?.avatar_url ?? null,
+            subscription_tier: 'free',
+            subscription_status: 'none',
+            subscription_ends_at: null,
+            ai_queries_today: 0,
+            lemon_subscription_id: null,
+          })
+        }
       }
       setAuthLoading(false)
-    })
+    }).catch(() => setAuthLoading(false))
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session)
 
       if (event === 'SIGNED_IN' && session) {
-        await loadProfile(session.user.id)
-        await updateLastSignIn(session.user.id)
-
-        // Apple name capture: only sends full_name on first sign-in
-        const fullName = session.user.user_metadata?.full_name
-        if (fullName) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name')
-            .eq('id', session.user.id)
-            .single()
-          if (profile && !profile.display_name) {
-            await supabase
-              .from('profiles')
-              .update({ display_name: fullName })
-              .eq('id', session.user.id)
-          }
+        try {
+          await loadProfile(session.user.id)
+          await updateLastSignIn(session.user.id)
+          migrateLocalStorage()
+        } catch {
+          setUser({
+            id: session.user.id,
+            email: session.user.email ?? '',
+            display_name: session.user.user_metadata?.full_name ?? null,
+            avatar_url: session.user.user_metadata?.avatar_url ?? null,
+            subscription_tier: 'free',
+            subscription_status: 'none',
+            subscription_ends_at: null,
+            ai_queries_today: 0,
+            lemon_subscription_id: null,
+          })
         }
-
-        migrateLocalStorage()
         setAuthLoading(false)
       }
 
