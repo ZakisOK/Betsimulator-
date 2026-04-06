@@ -39,7 +39,17 @@ export const AuthModal: React.FC<Props> = ({ mode: initialMode, onClose }) => {
         options: { emailRedirectTo: callbackUrl },
       })
       if (error) {
-        setError(error.message)
+        if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already exists')) {
+          // Account exists — just sign them in
+          const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+          if (signInError) {
+            setError('Account already exists. Check your password.')
+          } else {
+            onClose()
+          }
+        } else {
+          setError(error.message)
+        }
       } else {
         setSuccess('Check your email for a confirmation link.')
       }
