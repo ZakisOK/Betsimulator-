@@ -60,6 +60,8 @@ export function useAuth() {
   }, [setUser, setSession, setAuthLoading])
 
   async function loadProfile(userId: string) {
+    const { data: { session } } = await supabase.auth.getSession()
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
@@ -88,6 +90,19 @@ export function useAuth() {
         subscription_ends_at: profile.subscription_ends_at,
         ai_queries_today: profile.ai_queries_today,
         lemon_subscription_id: profile.lemon_subscription_id,
+      })
+    } else if (session?.user) {
+      // Profile query failed (RLS or timing) — fall back to session data
+      setUser({
+        id: session.user.id,
+        email: session.user.email ?? '',
+        display_name: session.user.user_metadata?.full_name ?? null,
+        avatar_url: session.user.user_metadata?.avatar_url ?? null,
+        subscription_tier: 'free',
+        subscription_status: 'none',
+        subscription_ends_at: null,
+        ai_queries_today: 0,
+        lemon_subscription_id: null,
       })
     }
   }
