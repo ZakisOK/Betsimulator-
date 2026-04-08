@@ -1,0 +1,30 @@
+version: "2"
+
+reviews:
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: ["main"]
+
+  path_filters:
+    exclude:
+      - "node_modules/**"
+      - ".next/**"
+      - "dist/**"
+      - "build/**"
+      - "out/**"
+      - "coverage/**"
+      - "**/*.lock"
+      - "**/*.snap"
+
+  review_status: true
+  collapse_walkthrough: false
+
+tone_instructions: >
+  Review as a principal engineer. Flag: redundant comments on self-documenting code,
+  verbose generic variable names, unnecessary abstraction layers, robotically uniform
+  file structure, AI-generated boilerplate patterns. Praise concise domain-specific
+  naming, well-scoped error messages, and purposeful code structure.
+
+chat:
+  auto_reply: true

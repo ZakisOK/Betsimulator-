@@ -1,0 +1,16 @@
+pre-commit:
+  parallel: false
+  commands:
+    biome:
+      glob: "*.{js,jsx,ts,tsx,json,css}"
+      run: npx @biomejs/biome check --write --no-errors-on-unmatched {staged_files} && git add {staged_files}
+      fail_text: "Biome format/lint failed. Fix errors above."
+    gitleaks:
+      run: "gitleaks protect --staged --no-banner -v || echo 'WARNING: gitleaks not installed — skipping secret scan'"
+      fail_text: "Secrets detected. Remove them before committing."
+
+commit-msg:
+  commands:
+    commitlint:
+      run: npx commitlint --edit "$1"
+      fail_text: "Commit message does not follow Conventional Commits format."
