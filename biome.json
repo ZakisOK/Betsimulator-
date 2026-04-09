@@ -10,12 +10,12 @@
     "ignoreUnknown": true,
     "includes": [
       "**/*.{js,ts,jsx,tsx,mjs,cjs,json,css}",
-      "!**/node_modules/**",
-      "!**/dist/**",
-      "!**/.next/**",
-      "!**/out/**",
-      "!**/build/**",
-      "!**/coverage/**"
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.next",
+      "!**/out",
+      "!**/build",
+      "!**/coverage"
     ]
   },
   "formatter": {
@@ -44,7 +44,8 @@
       },
       "suspicious": {
         "noExplicitAny": "error",
-        "noConsole": "warn"
+        "noConsole": "warn",
+        "noUnknownAtRules": "off"
       },
       "style": {
         "noNonNullAssertion": "warn",

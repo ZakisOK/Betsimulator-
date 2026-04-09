@@ -1,35 +1,66 @@
-import { createClient } from '@supabase/supabase-js'
-import Anthropic from '@anthropic-ai/sdk'
+import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@supabase/supabase-js";
 
 interface Env {
-  VITE_SUPABASE_URL: string
-  SUPABASE_SERVICE_ROLE_KEY: string
-  ANTHROPIC_API_KEY: string
+  VITE_SUPABASE_URL: string;
+  SUPABASE_SERVICE_ROLE_KEY: string;
+  ANTHROPIC_API_KEY: string;
+  INTERNAL_WEBHOOK_SECRET?: string;
 }
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
-  const body = await request.json() as {
-    userId: string
-    strategyConfig?: unknown
-    metrics?: unknown
-    orderId: string
+  // Authenticate: require either a Bearer JWT or an internal webhook secret
+  const authHeader = request.headers.get("authorization");
+  const internalSecret = request.headers.get("x-internal-secret");
+
+  const supabase = createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+
+  let authenticatedUserId: string | null = null;
+
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(token);
+    if (authError || !user) return Response.json({ error: "Invalid token" }, { status: 401 });
+    authenticatedUserId = user.id;
+  } else if (
+    internalSecret &&
+    env.INTERNAL_WEBHOOK_SECRET &&
+    internalSecret === env.INTERNAL_WEBHOOK_SECRET
+  ) {
+    // Called internally from webhook handler
+  } else {
+    return Response.json({ error: "Missing authorization" }, { status: 401 });
   }
 
-  const { userId, strategyConfig, metrics, orderId } = body
-  if (!userId || !orderId) return Response.json({ error: 'Missing required fields' }, { status: 400 })
+  const body = (await request.json()) as {
+    userId: string;
+    strategyConfig?: unknown;
+    metrics?: unknown;
+    orderId: string;
+  };
 
-  const supabase = createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
-  const anthropic = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY })
+  const { userId, strategyConfig, metrics, orderId } = body;
+  if (!userId || !orderId)
+    return Response.json({ error: "Missing required fields" }, { status: 400 });
+
+  // If authenticated via JWT, ensure the user can only generate their own reports
+  if (authenticatedUserId && authenticatedUserId !== userId) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const anthropic = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 
   await supabase
-    .from('reports')
-    .update({ status: 'generating' })
-    .eq('user_id', userId)
-    .eq('order_id', orderId)
+    .from("reports")
+    .update({ status: "generating" })
+    .eq("user_id", userId)
+    .eq("order_id", orderId);
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: "claude-sonnet-4-6",
       max_tokens: 4096,
       system: `You are a quantitative analyst specializing in baccarat betting systems.
 Generate a structured deep analysis report (3,000-4,000 tokens) in HTML format.
@@ -47,7 +78,7 @@ Include these sections:
 Use proper HTML with h2, h3, p, table, ul tags. Be honest about house edge math.`,
       messages: [
         {
-          role: 'user',
+          role: "user",
           content: `Generate a deep analysis report for this baccarat strategy.
 
 Strategy Config: ${JSON.stringify(strategyConfig ?? {})}
@@ -56,10 +87,10 @@ Backtest Metrics: ${JSON.stringify(metrics ?? {})}
 Generate the full HTML report now.`,
         },
       ],
-    })
+    });
 
-    const content = response.content[0]
-    const htmlContent = content.type === 'text' ? content.text : '<p>Analysis unavailable.</p>'
+    const content = response.content[0];
+    const htmlContent = content.type === "text" ? content.text : "<p>Analysis unavailable.</p>";
 
     const fullHtml = `<!DOCTYPE html>
 <html>
@@ -86,33 +117,31 @@ Generate the full HTML report now.`,
 </div>
 ${htmlContent}
 </body>
-</html>`
+</html>`;
 
-    const reportId = crypto.randomUUID()
-    const path = `${userId}/${reportId}.html`
-    await supabase.storage
-      .from('reports')
-      .upload(path, fullHtml, { contentType: 'text/html' })
+    const reportId = crypto.randomUUID();
+    const path = `${userId}/${reportId}.html`;
+    await supabase.storage.from("reports").upload(path, fullHtml, { contentType: "text/html" });
 
     await supabase
-      .from('reports')
-      .update({ status: 'ready', pdf_path: path })
-      .eq('user_id', userId)
-      .eq('order_id', orderId)
+      .from("reports")
+      .update({ status: "ready", pdf_path: path })
+      .eq("user_id", userId)
+      .eq("order_id", orderId);
 
-    return Response.json({ ok: true, reportId })
+    return Response.json({ ok: true, reportId });
   } catch (err) {
-    console.error('Report generation error:', err)
+    console.error("Report generation error:", err);
     await supabase
-      .from('reports')
-      .update({ status: 'failed' })
-      .eq('user_id', userId)
-      .eq('order_id', orderId)
-    return Response.json({ error: 'Report generation failed' }, { status: 500 })
+      .from("reports")
+      .update({ status: "failed" })
+      .eq("user_id", userId)
+      .eq("order_id", orderId);
+    return Response.json({ error: "Report generation failed" }, { status: 500 });
   }
-}
+};
 
 export const onRequest: PagesFunction<Env> = async (context) => {
-  if (context.request.method !== 'POST') return new Response('Method not allowed', { status: 405 })
-  return onRequestPost(context)
-}
+  if (context.request.method !== "POST") return new Response("Method not allowed", { status: 405 });
+  return onRequestPost(context);
+};
